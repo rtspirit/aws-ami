@@ -1,0 +1,56 @@
+---
+name: Packer Build on Pull Requests
+
+# Controls when the action will run.
+# Triggers the workflow on push or pull request events but only for the main branch
+on:
+  # Workflow is triggered on pull requests
+  push:
+    # Workflow will only be triggered for pull requests on "master" branch
+    branches: [ main ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  packer:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - name: Checkout Repository
+      uses: actions/checkout@v2
+
+
+    # - name: Configure AWS Credentials
+    #   uses: aws-actions/configure-aws-credentials@v1
+    #   with:
+    #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+    #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    #     aws-region: us-east-1
+        
+    # Ref: https://github.com/marketplace/actions/packer-github-actions
+    - name: Validate Packer Template
+      uses: hashicorp/packer-github-actions@master
+      with:
+        command: validate
+        arguments: "-syntax-only -var-file=vars.json" # only validate syntax
+        target: ami.json
+      env:  
+        aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        # repo-token: ${{ secrets.GITHUB_TOKEN }}
+        PACKER_LOG: 1 # enable debug log for packer
+        
+    - name: Build Custom AMI GHactions
+      uses: hashicorp/packer-github-actions@master
+      with:
+        command: build
+        arguments: "-var-file=vars.json"
+        target: ami.json
+      env:  
+        aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        # repo-token: ${{ secrets.GITHUB_TOKEN }}
+        PACKER_LOG: 1
